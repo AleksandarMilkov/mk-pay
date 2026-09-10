@@ -25,6 +25,7 @@ public class PaymentService {
     private final BankAccountRepository accountRepository;
     private final PaymentRepository paymentRepository;
     private final PaymentAuditEventRepository auditEventRepository;
+    private final OutboxEventRepository outboxEventRepository;
 
     private final Counter paymentSuccessCounter;
     private final Timer paymentTimer;
@@ -33,11 +34,13 @@ public class PaymentService {
                           BankAccountRepository accountRepository,
                           PaymentRepository paymentRepository,
                           PaymentAuditEventRepository auditEventRepository,
+                          OutboxEventRepository outboxEventRepository,
                           MeterRegistry meterRegistry) {
         this.phoneAliasRepository = phoneAliasRepository;
         this.accountRepository = accountRepository;
         this.paymentRepository = paymentRepository;
         this.auditEventRepository = auditEventRepository;
+        this.outboxEventRepository = outboxEventRepository;
 
         this.paymentSuccessCounter = Counter.builder("mkpay.payments.success.count")
                 .description("Total number of successfully completed payments")
@@ -120,6 +123,15 @@ public class PaymentService {
             payment.setState(PaymentState.COMPLETED);
             payment = paymentRepository.saveAndFlush(payment);
             logAuditEvent(payment.getId(), PaymentState.COMPLETED, "Credited recipient phone: " + request.recipientPhone());
+
+            outboxEventRepository.save(OutboxEvent.builder()
+                    .aggregateType("PAYMENT")
+                    .aggregateId(payment.getId().toString())
+                    .eventType("PAYMENT_COMPLETED")
+                    .payload(String.format("{\"paymentId\":\"%s\",\"amount\":%s,\"currency\":\"MKD\"}",
+                            payment.getId(), payment.getAmount()))
+                    .status(OutboxStatus.PENDING)
+                    .build());
 
             paymentSuccessCounter.increment();
             return mapToResponse(payment);

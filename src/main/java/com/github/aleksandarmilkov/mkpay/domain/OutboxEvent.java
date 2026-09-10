@@ -1,11 +1,18 @@
 package com.github.aleksandarmilkov.mkpay.domain;
 
 import jakarta.persistence.*;
+import lombok.*;
+
 import java.time.Instant;
 import java.util.UUID;
 
 @Entity
 @Table(name = "outbox_events")
+@Getter
+@Setter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
+@Builder
 public class OutboxEvent {
 
     @Id
@@ -32,26 +39,16 @@ public class OutboxEvent {
 
     private Instant processedAt;
 
-    protected OutboxEvent() {}
-
-    public OutboxEvent(String aggregateType, String aggregateId, String eventType, String payload) {
-        this.id = UUID.randomUUID();
-        this.aggregateType = aggregateType;
-        this.aggregateId = aggregateId;
-        this.eventType = eventType;
-        this.payload = payload;
-        this.status = OutboxStatus.PENDING;
-        this.createdAt = Instant.now();
+    @PrePersist
+    protected void onCreate() {
+        if (this.id == null) {
+            this.id = UUID.randomUUID();
+        }
+        if (this.createdAt == null) {
+            this.createdAt = Instant.now();
+        }
+        if (this.status == null) {
+            this.status = OutboxStatus.PENDING;
+        }
     }
-
-    public UUID getId() { return id; }
-    public String getAggregateType() { return aggregateType; }
-    public String getAggregateId() { return aggregateId; }
-    public String getEventType() { return eventType; }
-    public String getPayload() { return payload; }
-    public OutboxStatus getStatus() { return status; }
-    public void setStatus(OutboxStatus status) { this.status = status; }
-    public Instant getCreatedAt() { return createdAt; }
-    public Instant getProcessedAt() { return processedAt; }
-    public void setProcessedAt(Instant processedAt) { this.processedAt = processedAt; }
 }
