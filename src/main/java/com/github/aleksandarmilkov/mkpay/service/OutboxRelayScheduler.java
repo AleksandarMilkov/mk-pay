@@ -24,12 +24,11 @@ public class OutboxRelayScheduler {
     @Scheduled(fixedDelay = 5000)
     @Transactional
     public void processOutboxEvents() {
-        List<OutboxEvent> pendingEvents = outboxEventRepository.findTop50ByStatusOrderByCreatedAtAsc(OutboxStatus.PENDING);
+        List<OutboxEvent> pendingEvents = outboxEventRepository.findTop50ByStatusForUpdateSkipLocked(OutboxStatus.PENDING);
 
         for (OutboxEvent event : pendingEvents) {
             event.setStatus(OutboxStatus.PROCESSED);
             event.setProcessedAt(Instant.now());
-            outboxEventRepository.save(event);
         }
     }
 }

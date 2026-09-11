@@ -1,5 +1,6 @@
 package com.github.aleksandarmilkov.mkpay.service;
 
+import com.github.aleksandarmilkov.mkpay.AbstractIntegrationTest;
 import com.github.aleksandarmilkov.mkpay.domain.*;
 import com.github.aleksandarmilkov.mkpay.dto.PaymentRequest;
 import com.github.aleksandarmilkov.mkpay.dto.PaymentResponse;
@@ -9,7 +10,10 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -21,7 +25,9 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 @ActiveProfiles("test")
-public class PaymentServiceConcurrencyTest {
+@DirtiesContext // Ensures any state modified by multi-threaded writes doesn't taint other test contexts
+@Transactional(propagation = Propagation.NOT_SUPPORTED)
+public class PaymentServiceConcurrencyTest extends AbstractIntegrationTest {
 
     @Autowired
     private PaymentService paymentService;
