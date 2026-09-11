@@ -25,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 @ActiveProfiles("test")
-@DirtiesContext // Ensures any state modified by multi-threaded writes doesn't taint other test contexts
+@DirtiesContext
 @Transactional(propagation = Propagation.NOT_SUPPORTED)
 public class PaymentServiceConcurrencyTest extends AbstractIntegrationTest {
 
@@ -97,7 +97,7 @@ public class PaymentServiceConcurrencyTest extends AbstractIntegrationTest {
     @DisplayName("Concurrent payments execute safely with pessimistic locking without overdrawing balance")
     void testConcurrentPaymentProcessing() throws InterruptedException {
         int numberOfThreads = 10;
-        BigDecimal transferAmount = new BigDecimal("100.00"); // 10 transfers of 100 = 1000 total debited
+        BigDecimal transferAmount = new BigDecimal("100.00");
 
         ExecutorService executorService = Executors.newFixedThreadPool(numberOfThreads);
         CountDownLatch latch = new CountDownLatch(1);
@@ -110,7 +110,7 @@ public class PaymentServiceConcurrencyTest extends AbstractIntegrationTest {
             final String idempotencyKey = UUID.randomUUID().toString();
             executorService.submit(() -> {
                 try {
-                    latch.await(); // Hold all threads until signal
+                    latch.await();
                     PaymentRequest request = new PaymentRequest("+38970111222", "+38970333444", transferAmount);
                     PaymentResponse response = paymentService.processPayment(request, idempotencyKey);
                     if (response.state() == PaymentState.COMPLETED) {
@@ -124,13 +124,12 @@ public class PaymentServiceConcurrencyTest extends AbstractIntegrationTest {
             });
         }
 
-        latch.countDown(); // Release all threads at once to simulate flash concurrency
+        latch.countDown();
         boolean finished = completionLatch.await(10, TimeUnit.SECONDS);
         executorService.shutdown();
 
         assertTrue(finished, "Execution timed out under concurrent load");
 
-        // Assert exact balances
         BankAccount updatedSender = accountRepository.findById(senderAccountId).orElseThrow();
         BankAccount updatedRecipient = accountRepository.findById(recipientAccountId).orElseThrow();
 
@@ -138,7 +137,6 @@ public class PaymentServiceConcurrencyTest extends AbstractIntegrationTest {
         assertEquals(0, new BigDecimal("1500.00").compareTo(updatedRecipient.getBalance()), "Recipient balance should be exactly 1500.00");
         assertEquals(10, successCount.get(), "All 10 payment operations should complete successfully");
 
-        // Verify Outbox Atomicity: Exactly 10 outbox events created alongside payments
         List<OutboxEvent> outboxEvents = outboxEventRepository.findAll();
         assertEquals(10, outboxEvents.size(), "Exactly 10 Outbox events should be persisted atomically");
     }

@@ -58,7 +58,7 @@ class PaymentRollbackTest extends AbstractIntegrationTest {
         phoneAliasRepository.flush();
         accountRepository.flush();
         bankRepository.flush();
-        // 1. Bank
+
         Bank bank = new Bank();
         bank.setName("NLB Banka");
         bank.setCode("NLB");
@@ -66,7 +66,6 @@ class PaymentRollbackTest extends AbstractIntegrationTest {
         bank.setActive(true);
         bank = bankRepository.save(bank);
 
-        // 2. Bank Accounts
         BankAccount senderAcc = new BankAccount();
         senderAcc.setAccountNumber("MK0720000000000001");
         senderAcc.setBalance(new BigDecimal("50.00"));
@@ -81,7 +80,6 @@ class PaymentRollbackTest extends AbstractIntegrationTest {
         recipientAcc.setOwnerName("Recipient");
         recipientAcc = accountRepository.save(recipientAcc);
 
-        // 3. Phone Aliases
         PhoneAlias senderAlias = new PhoneAlias();
         senderAlias.setPhoneNumber(senderPhone);
         senderAlias.setBankAccount(senderAcc);
@@ -94,7 +92,6 @@ class PaymentRollbackTest extends AbstractIntegrationTest {
     }
     @AfterEach
     void tearDown() {
-        // Избриши ги податоците за да биде чиста базата за следниот тест во mvnw
         outboxEventRepository.deleteAll();
         paymentRepository.deleteAll();
         phoneAliasRepository.deleteAll();
