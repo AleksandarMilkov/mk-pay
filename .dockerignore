@@ -1,0 +1,32 @@
+# Build tool outputs
+target/*.jar
+target/classes/
+target/test-classes/
+target/generated-sources/
+build/
+.gradle/
+
+# Version control and environment secrets
+.git/
+.gitignore
+.env
+*.env.local
+
+# IDE and OS metadata
+.idea/
+*.iml
+.vscode/
+.classpath
+.project
+.settings/
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Project files not needed inside the build context
+Dockerfile
+docker-compose*.yml
+README.md
+.github/
